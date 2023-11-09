@@ -14,38 +14,51 @@
 
 import streamlit as st
 from streamlit.logger import get_logger
+import streamlit as st
+import tempfile
+import os
+from ultralytics import YOLO
+from PIL import Image
 
-LOGGER = get_logger(__name__)
+# Load the YOLO model
+model = YOLO(r'C:\naveen\cropping weights2.pt')
 
+# Create a folder to store uploaded images
+uploaded_images_folder = 'uploaded_images'
+os.makedirs(uploaded_images_folder, exist_ok=True)
 
-def run():
-    st.set_page_config(
-        page_title="Hello",
-        page_icon="👋",
-    )
+# Define the Streamlit app
+def main():
+    st.title("Object Detection and Cropping")
 
-    st.write("# Welcome to Streamlit! 👋")
+    # Upload multiple images
+    uploaded_images = st.file_uploader("Upload multiple images", type=["jpg", "png", "jpeg"], accept_multiple_files=True)
 
-    st.sidebar.success("Select a demo above.")
+    if uploaded_images:
+        # Create a list to store the paths of the uploaded images
+        image_paths = []
 
-    st.markdown(
-        """
-        Streamlit is an open-source app framework built specifically for
-        Machine Learning and Data Science projects.
-        **👈 Select a demo from the sidebar** to see some examples
-        of what Streamlit can do!
-        ### Want to learn more?
-        - Check out [streamlit.io](https://streamlit.io)
-        - Jump into our [documentation](https://docs.streamlit.io)
-        - Ask a question in our [community
-          forums](https://discuss.streamlit.io)
-        ### See more complex demos
-        - Use a neural net to [analyze the Udacity Self-driving Car Image
-          Dataset](https://github.com/streamlit/demo-self-driving)
-        - Explore a [New York City rideshare dataset](https://github.com/streamlit/demo-uber-nyc-pickups)
-    """
-    )
+        for i, uploaded_image in enumerate(uploaded_images):
+            # Save the uploaded image to the uploaded_images folder with its original name
+            temp_image_path = os.path.join(uploaded_images_folder, uploaded_image.name)
+            with open(temp_image_path, 'wb') as temp_file:
+                temp_file.write(uploaded_image.read())
+            image_paths.append(temp_image_path)
 
+            # Display the name of the uploaded image
+            st.write(f"Uploaded Image {i+1}: {uploaded_image.name}")
+
+        if st.button("Detect and Crop All Images"):
+            # Process all the uploaded images and save the detection results with original names
+            with st.spinner("Detecting objects and cropping all images..."):
+                for i, image_path in enumerate(image_paths):
+                    results = model.predict(image_path, save=True, imgsz=320, conf=0.25, save_crop=True)
+                    st.success(f"Detection and cropping for Image {i+1} completed!")
 
 if __name__ == "__main__":
-    run()
+    main()
+
+
+
+
+
